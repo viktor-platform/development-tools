@@ -83,17 +83,17 @@ your development environment.
 ## Download entities
 Sample use for downloading entities:
 ```bash
-dev-cli download-entities -s demo -d download_test -u username@viktor.ai -etn 'Projects'
+dev-cli download-entities -cp -s demo -d C:\WORK\PYTHON\download_map -u username@viktor.ai -etn 'Projects' -sw 55
 ```
 ## Stash database
 Sample use for stashing the database:
 ```bash
-dev-cli stash-database -cp -u username@viktor.ai -s demo -d download_map -f dev-environment.json -sw 55
+dev-cli stash-database -cp -u username@viktor.ai -s demo -d C:\WORK\PYTHON\download_map -f dev-environment.json -sw 55
 ```
 
 Sample use for applying the stashed database:
 ```bash
-dev-cli stash-database -cp -u username@viktor.ai -s demo -d databases -f dev-environment.json -sw 55 --apply
+dev-cli stash-database -cp -u username@viktor.ai -s demo -d C:\WORK\PYTHON\download_map -f dev-environment.json -sw 55 --apply
 ```
 Note: Make sure you have an instance of the app running in your development environment when you apply the database.
 
