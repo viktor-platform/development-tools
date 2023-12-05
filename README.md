@@ -99,4 +99,5 @@ Note: Make sure you have an instance of the app running in your development envi
 
 
 # Limitations
-- Storage() is currently not supported.
+- Storage() is currently not supported
+- Creating root entity is not possible
