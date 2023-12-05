@@ -70,6 +70,10 @@ Commands:
 The `-h` option should provide enough help for each of the available commands.
 
 ## Copy entities
+Copies entities from source workspace to destination workspace, for example from production to development environment. 
+
+Please be careful, all entities are OVERWRITTEN. Wrong use of this functionality can do IRREVERSIBLE DAMAGE to your database, for example when you accidently overwrite your production database with your development database.
+
 Sample use for copying entities:
 ```bash
 dev-cli copy-entities -cp -u username@viktor.ai -s demo -si 2895 -di 3021 -sw 120 -dw 55
@@ -81,11 +85,18 @@ Make sure that the root entities are similar. This can be achieved by running th
 your development environment.
 
 ## Download entities
+Download entities to a local file folder.
+
 Sample use for downloading entities:
 ```bash
 dev-cli download-entities -cp -s demo -d C:\WORK\PYTHON\download_map -u username@viktor.ai -etn 'Projects' -sw 55
 ```
 ## Stash database
+Stash database and apply database for later use.
+
+Please be careful, all entities are OVERWRITTEN. Wrong use of this functionality can do IRREVERSIBLE DAMAGE to your database, for example when you accidently overwrite your production database with your development database.
+
+
 Sample use for stashing the database:
 ```bash
 dev-cli stash-database -cp -u username@viktor.ai -s demo -d C:\WORK\PYTHON\download_map -f dev-environment.json -sw 55
