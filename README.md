@@ -76,7 +76,7 @@ Please be careful, all entities are OVERWRITTEN. Wrong use of this functionality
 
 Sample use for copying entities:
 ```bash
-dev-cli copy-entities -cp -u username@viktor.ai -s demo -si 2895 -di 3021 -sw 120 -dw 55
+dev-cli copy-entities -cp -u username@viktor.ai -s demo -si 2895 -di 3032 -sw 120 -dw 55
 ```
 ![](resources/copy_entities_example.jpg)
 
