@@ -41,7 +41,7 @@ venv\Scripts\activate
 
 Pip install directly from the repository:
 ```bash
-pip install pip install git+https://github.com/viktor-platform/development-tools.git
+pip install git+https://github.com/viktor-platform/development-tools.git
 ```
 
 # Using the Development Tools
