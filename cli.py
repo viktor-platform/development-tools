@@ -10,8 +10,8 @@ from typing import List
 
 import click
 
-from .subdomain import get_consolidated_login_details
-from .subdomain import get_domain
+from viktor_dev_tools.subdomain import get_consolidated_login_details
+from viktor_dev_tools.subdomain import get_domain
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 CLIENT_PERMISSION = "Have you checked with the Client that you are allowed to retrieve data from their sub-domain"
