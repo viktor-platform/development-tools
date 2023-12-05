@@ -129,7 +129,7 @@ class ViktorSubDomain:
         if not access_token:
             # Perform post request to '/o/token/' end-point to login
             response = requests.post(f"{self.host}/o/token/", data=json.dumps(auth_details), headers=_STANDARD_HEADERS)
-            if not (200 <= response.status_code < 300):
+            if not 200 <= response.status_code < 300:
                 print(f"Provided credentials are not valid.\n{response.text}")
                 sys.exit(1)
             self.access_token = response.json()["access_token"]

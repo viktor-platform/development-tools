@@ -21,13 +21,13 @@ option_client_permission = click.option(
 )
 
 option_username = click.option("--username", "-u", help=f"Username for both subdomains", prompt="Username")
-option_source = click.option(
-    "--source", "-s", help=f"Source subdomain", prompt="Source VIKTOR sub-domain"
-)
+option_source = click.option("--source", "-s", help=f"Source subdomain", prompt="Source VIKTOR sub-domain")
 option_source_sso = click.option("--source-sso", "-ss", help="Source domain uses SSO (flag)", is_flag=True)
 option_source_pwd = click.option("--source-pwd", "-sp", help="Source domain password")
 option_source_token = click.option("--source-token", "-st", help="Source domain token (optional)")
-option_source_workspace = click.option("--source-ws", "-sw", help="Source workspace id or name", prompt="Source workspace ID")
+option_source_workspace = click.option(
+    "--source-ws", "-sw", help="Source workspace id or name", prompt="Source workspace ID"
+)
 option_destination = click.option(
     "--destination",
     "-d",
@@ -38,9 +38,15 @@ option_destination_sso = click.option(
 )
 option_destination_pwd = click.option("--destination-pwd", "-dp", help="Destination domain password")
 option_destination_token = click.option("--destination-token", "-dt", help="Destination domain token (optional)")
-option_destination_workspace = click.option("--destination-ws", "-dw", help="Destination workspace ID", prompt="Destination workspace ID")
-option_destiny_id = click.option("--destination-id", "-di", help="Destination parent entity id", prompt="Destination entity ID")
-option_source_id = click.option("--source-ids", "-si", help="Source entity id (allows multiple)", prompt="Source entity ID")
+option_destination_workspace = click.option(
+    "--destination-ws", "-dw", help="Destination workspace ID", prompt="Destination workspace ID"
+)
+option_destiny_id = click.option(
+    "--destination-id", "-di", help="Destination parent entity id", prompt="Destination entity ID"
+)
+option_source_id = click.option(
+    "--source-ids", "-si", help="Source entity id (allows multiple)", prompt="Source entity ID"
+)
 
 
 class OrderedGroup(click.Group):
@@ -78,19 +84,19 @@ def cli():
 @option_source_workspace
 @option_destination_workspace
 def copy_entities(
-        client_permission: bool,
-        username: str,
-        source: str,
-        source_pwd: str,  # (default) will prompt for password unless `source_token` is supplied
-        destination_pwd: str,  # (default) will prompt for password unless `destination_token` is supplied
-        source_ws: str,
-        destination_ws: str,
-        destination: str = "",
-        source_token: str = None,  # (Optional) if not set, will ask for pwd instead
-        destination_token: str = None,  # (Optional) if not set, will ask for pwd instead
-        source_ids: List[int] = None,
-        destination_id: int = None,
-        exclude_children: bool = False,
+    client_permission: bool,
+    username: str,
+    source: str,
+    source_pwd: str,  # (default) will prompt for password unless `source_token` is supplied
+    destination_pwd: str,  # (default) will prompt for password unless `destination_token` is supplied
+    source_ws: str,
+    destination_ws: str,
+    destination: str = "",
+    source_token: str = None,  # (Optional) if not set, will ask for pwd instead
+    destination_token: str = None,  # (Optional) if not set, will ask for pwd instead
+    source_ids: List[int] = None,
+    destination_id: int = None,
+    exclude_children: bool = False,
 ) -> None:
     """Copy entities between domains.
 
@@ -138,15 +144,15 @@ def copy_entities(
 @click.option("--entity-type-names", "-etn", help="Entity type name (allows multiple)", prompt="Entity type name")
 @click.option("--include-revisions", "-rev", is_flag=True, help="Include all revisions of all entities Default: True")
 def download_entities(
-        client_permission: bool,
-        username: str,
-        source: str,
-        source_pwd: str,
-        source_token: str,
-        destination: str,
-        source_ws: str,
-        entity_type_names: List[str] = None,
-        include_revisions: bool = True,
+    client_permission: bool,
+    username: str,
+    source: str,
+    source_pwd: str,
+    source_token: str,
+    destination: str,
+    source_ws: str,
+    entity_type_names: List[str] = None,
+    include_revisions: bool = True,
 ) -> None:
     """Download entities from domains.
 
@@ -181,15 +187,15 @@ def download_entities(
 @click.option("--filename", "-f", help="Database filename (stored as json type)", prompt="Database filename")
 @click.option("--apply", "-a", help="Apply a stashed database", is_flag=True)
 def stash_database(
-        client_permission: bool,
-        username: str,
-        source: str,
-        source_pwd: str,
-        source_ws: str,
-        source_token: str,
-        destination: str,
-        filename: str,
-        apply: bool,
+    client_permission: bool,
+    username: str,
+    source: str,
+    source_pwd: str,
+    source_ws: str,
+    source_token: str,
+    destination: str,
+    filename: str,
+    apply: bool,
 ) -> None:
     """Stashes the database from some domain, and applies it to some domain.
 

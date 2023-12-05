@@ -40,5 +40,4 @@ disable=[
     "consider-using-dict-items",
     "duplicate-code",
     "unspecified-encoding",
-    "missing-timeout",
 ]
