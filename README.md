@@ -71,7 +71,9 @@ The `-h` option should provide enough help for each of the available commands.
 
 ## Copy entities
 Sample use for copying entities:
+```bash
 dev-cli copy-entities -cp -u username@viktor.ai -s demo -si 2895 -di 3021 -sw 120 -dw 55
+```
 ![](resources/copy_entities_example.jpg)
 
 Note:
@@ -80,15 +82,19 @@ your development environment.
 
 ## Download entities
 Sample use for downloading entities:
+```bash
 dev-cli download-entities -s demo -d download_test -u username@viktor.ai -etn 'Projects'
-
+```
 ## Stash database
 Sample use for stashing the database:
+```bash
 dev-cli stash-database -cp -u username@viktor.ai -s demo -d download_map -f dev-environment.json -sw 55
+```
 
 Sample use for applying the stashed database:
+```bash
 dev-cli stash-database -cp -u username@viktor.ai -s demo -d databases -f dev-environment.json -sw 55 --apply
-
+```
 Note: Make sure you have an instance of the app running in your development environment when you apply the database.
 
 
