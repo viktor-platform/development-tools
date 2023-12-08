@@ -67,16 +67,23 @@ def get_file_content_from_s3(entity: EntityDict) -> Optional[bytes]:
 
 
 def get_consolidated_login_details(
-    source: str, source_pwd: str, source_token: str, destination: str, destination_pwd: str, destination_token: str
+    username: str,
+    source: str,
+    source_pwd: str,
+    source_token: str,
+    destination: str,
+    destination_pwd: str,
+    destination_token: str,
 ):
-    """Checks if the source and destination domain are identical. If so, re-uses password or token."""
+    """Checks if the source and destination domain are identical. If so, re-uses username and password or token."""
     if not source_token:
+        username = username or click.prompt(f"Username for {source}")
         source_pwd = source_pwd or click.prompt(f"Password for {source}", hide_input=True)
     if source == destination:
         destination_pwd = source_pwd
         destination_token = source_token or destination_token
 
-    return source_pwd, source_token, destination_pwd, destination_token
+    return username, source_pwd, source_token, destination_pwd, destination_token
 
 
 # TODO: integrate this logic into the classmethods instead of a separate loose function

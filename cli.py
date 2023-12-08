@@ -121,8 +121,8 @@ def copy_entities(
     if not destination:
         destination = source
 
-    source_pwd, source_token, destination_pwd, destination_token = get_consolidated_login_details(
-        source, source_pwd, source_token, destination, destination_pwd, destination_token
+    username, source_pwd, source_token, destination_pwd, destination_token = get_consolidated_login_details(
+        username, source, source_pwd, source_token, destination, destination_pwd, destination_token
     )
     source_domain = get_domain(source, username, source_pwd, source_token, source_ws)
     destination_domain = get_domain(destination, username, destination_pwd, destination_token, destination_ws)
@@ -156,15 +156,11 @@ def download_entities(
 ) -> None:
     """Download entities from domains.
 
-    Clones entities from source to destination, by entity_type.
+    Download entities from source to destination on local filesystem, by entity_type.
 
     Example usage:
 
     $ dev-tools-cli download-entities -s geo-tools -d ~/testfolder/downloaded_entities -u rweigand@viktor.ai -etn 'CPT File' -rev
-
-    Allows copying multiple entities of multiple types from the source, by specifying multiple source-ids. e.g. :
-
-    $ copy-entities <other options> -etn Section -etn Project -etn 'CPT File'
 
     """
     if not client_permission:
@@ -221,11 +217,12 @@ def stash_database(
     if not client_permission:
         raise click.ClickException("No permission to copy data")
 
-    source_domain = get_domain(source, username, source_pwd, source_token, source_ws)
+    # source domain when stashing, destination domain when applying
+    domain = get_domain(source, username, source_pwd, source_token, source_ws)
     if apply:
-        source_domain.upload_database_from_local_folder(source_folder=destination, filename=filename)
+        domain.upload_database_from_local_folder(source_folder=destination, filename=filename)
     else:
-        source_domain.download_database_to_local_folder(destination, filename)
+        domain.download_database_to_local_folder(destination, filename)
 
 
 @cli.command()
