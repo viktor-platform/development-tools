@@ -81,9 +81,9 @@ def get_consolidated_login_details(
 
     if username is not None and source == destination:
         source_pwd = source_pwd or click.prompt(f"Password for {source}", hide_input=True)
-        destination_pwd = source_pwd
+        destination_pwd = destination_pwd or source_pwd
 
-    return username, source_pwd, source_token, destination_pwd, destination_token
+    return source_pwd, source_token, destination_pwd, destination_token
 
 
 # TODO: integrate this logic into the classmethods instead of a separate loose function

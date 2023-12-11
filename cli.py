@@ -111,7 +111,7 @@ def copy_entities(
     if not destination:
         destination = source
 
-    username, source_pwd, source_token, destination_pwd, destination_token = get_consolidated_login_details(
+    source_pwd, source_token, destination_pwd, destination_token = get_consolidated_login_details(
         username, source, source_pwd, source_token, destination, destination_pwd, destination_token
     )
     source_domain = get_domain(source, username, source_pwd, source_token, source_ws)
