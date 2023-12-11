@@ -572,8 +572,9 @@ class ViktorSubDomain:
         validate_root_entities_compatibility(database_dict["entities"], destination_root_entities)
 
         print("Successfully validated database compatibility. Removing children...")
-        click.confirm('[DANGER] This removes all current entities in this workspace. Do you want to continue?',
-                      abort=True)
+        click.confirm(
+            "[DANGER] This removes all current entities in this workspace. Do you want to continue?", abort=True
+        )
         for root_entity in destination_root_entities:
             self.delete_children(root_entity["id"])
 
