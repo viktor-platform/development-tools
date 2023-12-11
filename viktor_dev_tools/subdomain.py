@@ -76,12 +76,12 @@ def get_consolidated_login_details(
     destination_token: str,
 ):
     """Checks if the source and destination domain are identical. If so, re-uses username and password or token."""
-    if not source_token:
-        username = username or click.prompt(f"Username for {source}")
+    if source_token is not None and source == destination:
+        destination_token = destination_token or source_token
+
+    if username is not None and source == destination:
         source_pwd = source_pwd or click.prompt(f"Password for {source}", hide_input=True)
-    if source == destination:
         destination_pwd = source_pwd
-        destination_token = source_token or destination_token
 
     return username, source_pwd, source_token, destination_pwd, destination_token
 
@@ -542,7 +542,7 @@ class ViktorSubDomain:
                         else:
                             with (entity_type_dir / f'{entity["id"]}.json').open(mode="w+") as fw:
                                 json.dump(entity, fw)
-                            print("Entity successfully saved!")
+                print("All entities succesfully saved")
 
     def download_database_to_local_folder(self, destination: str, filename: str):
         """Transfers all entities from current sub-domain to destination location as a single json file"""
@@ -572,8 +572,11 @@ class ViktorSubDomain:
         validate_root_entities_compatibility(database_dict["entities"], destination_root_entities)
 
         print("Successfully validated database compatibility. Removing children...")
+        click.confirm('[DANGER] This removes all current entities in this workspace. Do you want to continue?',
+                      abort=True)
         for root_entity in destination_root_entities:
             self.delete_children(root_entity["id"])
+
         # Make an entity type mapping from source entity type -> destination entity type
         entity_type_mapping = get_entity_type_mapping_from_entity_types(
             source_entity_types=database_dict["entity_types"], destination_entity_types=entity_types
@@ -631,11 +634,11 @@ class ViktorSubDomain:
             return default_id
 
         print("Destination parent entities: \n" + _repr_entities(possible_parent_entities) + "\n")
-        destination = int(input(f"Under which parent id should the entities be copied [{default_id}]: ")) or default_id
+        destination = int(click.prompt("Under which parent id should the entities be copied", default=default_id))
 
         possible_parent_entity_ids = [entity["id"] for entity in possible_parent_entities]
         while destination not in possible_parent_entity_ids:
-            destination = int(input(f"Entity id not possible, please try again [{default_id}]: ")) or default_id
+            destination = int(click.prompt(f"Entity id not possible, please try again", default=default_id))
         return destination
 
     def _update_file_download(self, entity: EntityDict):

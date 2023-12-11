@@ -16,15 +16,13 @@ from viktor_dev_tools.subdomain import get_domain
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 CLIENT_PERMISSION = "Have you checked with the Client that you are allowed to retrieve data from their sub-domain"
 
-option_client_permission = click.option(
-    "--client-permission", "-cp", help="Confirm Permission to retrieve data", is_flag=True, prompt=CLIENT_PERMISSION
-)
-
-option_username = click.option("--username", "-u", help=f"Username for both subdomains", prompt="Username")
+option_username = click.option("--username", "-u", help=f"Username for both subdomains, "
+                                                        f"use this function when you want "
+                                                        f"to reuse the credentials for both source an destination "
+                                                        f"on the same domain")
 option_source = click.option("--source", "-s", help=f"Source subdomain", prompt="Source VIKTOR sub-domain")
-option_source_sso = click.option("--source-sso", "-ss", help="Source domain uses SSO (flag)", is_flag=True)
 option_source_pwd = click.option("--source-pwd", "-sp", help="Source domain password")
-option_source_token = click.option("--source-token", "-st", help="Source domain token (optional)")
+option_source_token = click.option("--source-token", "-st", help="Source domain token ")
 option_source_workspace = click.option(
     "--source-ws", "-sw", help="Source workspace id or name", prompt="Source workspace ID"
 )
@@ -33,19 +31,15 @@ option_destination = click.option(
     "-d",
     help=f"Destination subdomain",
 )
-option_destination_sso = click.option(
-    "--destination-sso", "-ds", help="Destination domain uses SSO (flag)", is_flag=True
-)
 option_destination_pwd = click.option("--destination-pwd", "-dp", help="Destination domain password")
-option_destination_token = click.option("--destination-token", "-dt", help="Destination domain token (optional)")
+option_destination_token = click.option("--destination-token", "-dt", help="Destination domain token ")
 option_destination_workspace = click.option(
     "--destination-ws", "-dw", help="Destination workspace ID", prompt="Destination workspace ID"
 )
-option_destiny_id = click.option(
-    "--destination-id", "-di", help="Destination parent entity id", prompt="Destination entity ID"
-)
+option_destination_id = click.option(
+    "--destination-id", "-di", help="Destination parent entity id ")
 option_source_id = click.option(
-    "--source-ids", "-si", help="Source entity id (allows multiple)", prompt="Source entity ID"
+    "--source-ids", "-si", help="Source entity id (allows multiple)", prompt="Source entity ID", multiple=True
 )
 
 
@@ -70,7 +64,6 @@ def cli():
 
 
 @cli.command()
-@option_client_permission
 @option_username
 @option_source
 @option_source_pwd
@@ -79,36 +72,35 @@ def cli():
 @option_source_token
 @option_destination_token
 @option_source_id
-@option_destiny_id
+@option_destination_id
 @click.option("--exclude-children", "-ec", is_flag=True, help="Exclude all children of source entity")
 @option_source_workspace
 @option_destination_workspace
 def copy_entities(
-    client_permission: bool,
     username: str,
     source: str,
     source_pwd: str,  # (default) will prompt for password unless `source_token` is supplied
     destination_pwd: str,  # (default) will prompt for password unless `destination_token` is supplied
     source_ws: str,
     destination_ws: str,
-    destination: str = "",
-    source_token: str = None,  # (Optional) if not set, will ask for pwd instead
-    destination_token: str = None,  # (Optional) if not set, will ask for pwd instead
-    source_ids: List[int] = None,
-    destination_id: int = None,
-    exclude_children: bool = False,
+    destination: str,
+    source_token: str,  # (Optional) if not set, will ask for pwd instead
+    destination_token: str,  # (Optional) if not set, will ask for pwd instead
+    source_ids: List[int],
+    destination_id: int,
+    exclude_children: bool,
 ) -> None:
     """Copy entities between domains.
 
     \b
     As a default, prompts user to fill in a password for subdomain, unless token is provided.
-    If source and destination are the same, password or token is re-used for destination.
+    If username is provided and source and destination are the same, password or token is re-used for destination.
 
     Example usage:
 
-    $ dev-tools-cli copy-entities -s heijmans  (prompts for password)
+    $ dev-tools-cli copy-entities -s <domain>  (prompts for password)
 
-    $ dev-tools-cli copy-entities -s heijmans -st Afj..sf  (uses bearer token)
+    $ dev-tools-cli copy-entities -s <domain> -st Afj..sf  (uses bearer token)
 
 
     Allows copying multiple entity trees from the source, by specifying multiple source-ids. e.g. :
@@ -116,8 +108,6 @@ def copy_entities(
     $ copy-entities <other options> -si 922 -si 1032 -si 124
 
     """
-    if not client_permission:
-        raise click.ClickException("No permission to copy data")
     if not destination:
         destination = source
 
@@ -129,30 +119,29 @@ def copy_entities(
 
     entity_type_mapping = source_domain.get_entity_type_mapping(destination_domain)
 
-    entity_tree = source_domain.get_entity_tree(parent_id=source_ids, exclude_children=exclude_children)
-    destination_domain.post_entity_tree(entity_tree, entity_type_mapping, parent_id=destination_id)
+    for source_id in source_ids:
+        entity_tree = source_domain.get_entity_tree(parent_id=source_id, exclude_children=exclude_children)
+        destination_domain.post_entity_tree(entity_tree, entity_type_mapping, parent_id=destination_id)
 
 
 @cli.command()
-@option_client_permission
 @option_username
 @option_source
 @option_source_pwd
 @option_source_token
 @option_source_workspace
 @click.option("--destination", "-d", help="Destination path", prompt="Destination path")
-@click.option("--entity-type-names", "-etn", help="Entity type name (allows multiple)", prompt="Entity type name")
+@click.option("--entity-type-names", "-etn", help="Entity type name (allows multiple)", prompt="Entity type name", multiple=True)
 @click.option("--include-revisions", "-rev", is_flag=True, help="Include all revisions of all entities Default: True")
 def download_entities(
-    client_permission: bool,
     username: str,
     source: str,
     source_pwd: str,
     source_token: str,
     destination: str,
     source_ws: str,
-    entity_type_names: List[str] = None,
-    include_revisions: bool = True,
+    entity_type_names: List[str],
+    include_revisions: bool,
 ) -> None:
     """Download entities from domains.
 
@@ -160,12 +149,9 @@ def download_entities(
 
     Example usage:
 
-    $ dev-tools-cli download-entities -s geo-tools -d ~/testfolder/downloaded_entities -u rweigand@viktor.ai -etn 'CPT File' -rev
+    $ dev-tools-cli download-entities -s <domain> -sw 1 -d ~/testfolder/downloaded_entities -etn 'CPT File' -rev
 
     """
-    if not client_permission:
-        raise click.ClickException("No permission to copy data")
-
     source_domain = get_domain(source, username, source_pwd, source_token, source_ws)
     source_domain.download_entities_of_type_to_local_folder(
         destination, entity_type_names=entity_type_names, include_revisions=include_revisions
@@ -173,7 +159,6 @@ def download_entities(
 
 
 @cli.command()
-@option_client_permission
 @option_username
 @option_source
 @option_source_pwd
@@ -183,7 +168,6 @@ def download_entities(
 @click.option("--filename", "-f", help="Database filename (stored as json type)", prompt="Database filename")
 @click.option("--apply", "-a", help="Apply a stashed database", is_flag=True)
 def stash_database(
-    client_permission: bool,
     username: str,
     source: str,
     source_pwd: str,
@@ -214,9 +198,6 @@ def stash_database(
     $ dev-tools-cli stash-database -cp -u svandermeer@viktor.ai -s dev-svandermeer-viktor-ai -d databases -f dev-environment.json -sw 1
     $ dev-tools-cli stash-database -cp -u svandermeer@viktor.ai -s dev-svandermeer-viktor-ai -d databases -f dev-environment.json -sw 1 --apply
     """
-    if not client_permission:
-        raise click.ClickException("No permission to copy data")
-
     # source domain when stashing, destination domain when applying
     domain = get_domain(source, username, source_pwd, source_token, source_ws)
     if apply:

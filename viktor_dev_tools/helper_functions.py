@@ -58,11 +58,12 @@ def update_id_on_entity_fields(
         if isinstance(key_or_list, str):
             key = key_or_list
             if len(field_names_list) == 0:  # If last item, set the new values
-                if isinstance(properties[key], int):
-                    properties[key] = old_to_new_ids_mapping[properties[key]]
-                elif isinstance(properties[key], list):  # Might be a multiple select field
-                    for index, value in enumerate(properties[key]):
-                        properties[key][index] = old_to_new_ids_mapping[value]
+                if isinstance(properties, dict):
+                    if isinstance(properties[key], int):
+                        properties[key] = old_to_new_ids_mapping[properties[key]]
+                    elif isinstance(properties[key], list):  # Might be a multiple select field
+                        for index, value in enumerate(properties[key]):
+                            properties[key][index] = old_to_new_ids_mapping[value]
             else:  # Not the last item, go deeper
                 if isinstance(properties, dict):
                     update_id_on_entity_fields(field_names_list, properties[key], old_to_new_ids_mapping)
