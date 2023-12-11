@@ -58,7 +58,7 @@ def get_file_content_from_s3(entity: EntityDict) -> Optional[bytes]:
     """If entity has a filename property, download the file_content from the temporary download url"""
     temp_download_url = entity["properties"].get("filename", None)
     if temp_download_url:
-        file_download = requests.get(temp_download_url)
+        file_download = requests.get(temp_download_url, timeout=60)
         return file_download.content
     return None
 
@@ -135,7 +135,8 @@ class ViktorSubDomain:
         self.client_id = client_id
         if not access_token:
             # Perform post request to '/o/token/' end-point to login
-            response = requests.post(f"{self.host}/o/token/", data=json.dumps(auth_details), headers=_STANDARD_HEADERS)
+            response = requests.post(f"{self.host}/o/token/", data=json.dumps(auth_details), headers=_STANDARD_HEADERS,
+                                     timeout=30)
             if not 200 <= response.status_code < 300:
                 print(f"Provided credentials are not valid.\n{response.text}")
                 sys.exit(1)
@@ -184,7 +185,7 @@ class ViktorSubDomain:
         if self._logged_in and self.client_id == CLIENT_ID:  # Do not logout SSO, since token already expires in 15 min.
             payload = {"client_id": self.client_id, "token": self.access_token}
             response = requests.post(
-                f"{self.host}/o/revoke_token/", data=json.dumps(payload), headers=_STANDARD_HEADERS
+                f"{self.host}/o/revoke_token/", data=json.dumps(payload), headers=_STANDARD_HEADERS, timeout=30
             )
             if 200 <= response.status_code < 300:
                 print(f"Successfully logged out ({self.name}) ")
@@ -195,7 +196,7 @@ class ViktorSubDomain:
     def refresh_tokens(self) -> None:
         """Tokens for SSO expire within 900 seconds, so this function refreshes the tokens when it is expired"""
         payload = {"refresh_token": self.refresh_token, "client_id": self.client_id, "grant_type": "refresh_token"}
-        response = requests.post(f"{self.host}/o/token/", data=json.dumps(payload), headers=_STANDARD_HEADERS)
+        response = requests.post(f"{self.host}/o/token/", data=json.dumps(payload), headers=_STANDARD_HEADERS, timeout=30)
         response_json = response.json()
         self.access_token = response_json["access_token"]
         self.refresh_token = response_json["refresh_token"]
@@ -226,12 +227,12 @@ class ViktorSubDomain:
         if not path.startswith("/"):
             raise SyntaxError('URL should start with a "/"')
         response = requests.request(
-            "GET", f"{self.host}{'' if exclude_workspace else self.workspace}{path}", headers=self.headers
+            "GET", f"{self.host}{'' if exclude_workspace else self.workspace}{path}", headers=self.headers, timeout=30
         )
         if response.status_code == 401:
             self.refresh_tokens()
             response = requests.request(
-                "GET", f"{self.host}{'' if exclude_workspace else self.workspace}{path}", headers=self.headers
+                "GET", f"{self.host}{'' if exclude_workspace else self.workspace}{path}", headers=self.headers, timeout=30
             )
         response.raise_for_status()
         return response.json()
@@ -248,6 +249,7 @@ class ViktorSubDomain:
             f"{self.host}{'' if exclude_workspace else self.workspace}{path}",
             data=json.dumps(data),
             headers=self.headers,
+            timeout=30
         )
         if response.status_code == 401:
             self.refresh_tokens()
@@ -256,6 +258,7 @@ class ViktorSubDomain:
                 f"{self.host}{'' if exclude_workspace else self.workspace}{path}",
                 data=json.dumps(data),
                 headers=self.headers,
+                timeout=30
             )
         response.raise_for_status()
         if response.text:  # A DELETE request has no returned text, so check if there is text
@@ -267,7 +270,7 @@ class ViktorSubDomain:
         if not path.startswith("/"):
             raise SyntaxError('URL should start with a "/"')
         response = requests.request(
-            "PUT", f"{self.host}{self.workspace}{path}", data=json.dumps(data), headers=self.headers
+            "PUT", f"{self.host}{self.workspace}{path}", data=json.dumps(data), headers=self.headers, timeout=30
         )
         response.raise_for_status()
         return response.json()
@@ -276,7 +279,7 @@ class ViktorSubDomain:
         """Simple delete request"""
         if not path.startswith("/"):
             raise SyntaxError('URL should start with a "/"')
-        response = requests.request("DELETE", f"{self.host}{self.workspace}{path}", headers=self.headers)
+        response = requests.request("DELETE", f"{self.host}{self.workspace}{path}", headers=self.headers, timeout=30)
         response.raise_for_status()
 
     # ============================== All GET requests ============================== #
@@ -393,7 +396,7 @@ class ViktorSubDomain:
         """Uploads a file to S3 using the host authentication and returns the filename url"""
         # Upload the file to S3
         result = self._post_request(f"/entity_types/{entity_type}/upload/", data={})
-        requests.post(result["url"], data=result["fields"], files={"file": file_content})
+        requests.post(result["url"], data=result["fields"], files={"file": file_content}, timeout=60)
 
         # Return the filename url which should be add the the file entity
         return result["fields"]["key"]

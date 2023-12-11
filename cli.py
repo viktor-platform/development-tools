@@ -17,7 +17,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 CLIENT_PERMISSION = "Have you checked with the Client that you are allowed to retrieve data from their sub-domain"
 
 option_username = click.option("--username", "-u", help=f"Username for both subdomains, "
-                                                        f"use this function when you want "
+                                                        f"use this option when you want "
                                                         f"to reuse the credentials for both source an destination "
                                                         f"on the same domain")
 option_source = click.option("--source", "-s", help=f"Source subdomain", prompt="Source VIKTOR sub-domain")
