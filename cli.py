@@ -106,9 +106,9 @@ def copy_entities(
 
     Example usage:
 
-    $ dev-tools-cli copy-entities -s heijmans  (prompts for password)
+    $ dev-tools-cli copy-entities -s viktor  (prompts for password)
 
-    $ dev-tools-cli copy-entities -s heijmans -st Afj..sf  (uses bearer token)
+    $ dev-tools-cli copy-entities -s viktor -st Afj..sf  (uses bearer token)
 
 
     Allows copying multiple entity trees from the source, by specifying multiple source-ids. e.g. :
@@ -160,7 +160,7 @@ def download_entities(
 
     Example usage:
 
-    $ dev-tools-cli download-entities -s geo-tools -d ~/testfolder/downloaded_entities -u rweigand@viktor.ai -etn 'CPT File' -rev
+    $ dev-tools-cli download-entities -s geo-tools -d ~/testfolder/downloaded_entities -u viktor_user@viktor.ai -etn 'CPT File' -rev
 
     Allows copying multiple entities of multiple types from the source, by specifying multiple source-ids. e.g. :
 
