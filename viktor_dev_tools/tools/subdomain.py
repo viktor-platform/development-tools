@@ -12,11 +12,11 @@ from typing import Union
 import click
 import requests
 
-from .config import CLIENT_ID
-from .config import CLIENT_ID_SSO
-from .helper_functions import add_field_names_referring_to_entities_to_container
-from .helper_functions import update_id_on_entity_fields
-from .helper_functions import validate_root_entities_compatibility
+from viktor_dev_tools.tools.config import CLIENT_ID
+from viktor_dev_tools.tools.config import CLIENT_ID_SSO
+from viktor_dev_tools.tools.helper_functions import add_field_names_referring_to_entities_to_container
+from viktor_dev_tools.tools.helper_functions import update_id_on_entity_fields
+from viktor_dev_tools.tools.helper_functions import validate_root_entities_compatibility
 
 # ============================== Authentication related classes and constants ============================== #
 
