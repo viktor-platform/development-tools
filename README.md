@@ -89,7 +89,7 @@ Download entities to a local file folder.
 
 Sample use for downloading entities:
 ```bash
-dev-cli download-entities -cp -s demo -d C:\WORK\PYTHON\download_map -u username@viktor.ai -etn 'Projects' -sw 55
+dev-cli download-entities -s demo -d C:\WORK\PYTHON\download_map -u username@viktor.ai -etn 'Projects' -sw 55
 ```
 ## Stash database
 Stash database and apply database for later use.
