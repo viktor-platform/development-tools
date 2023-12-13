@@ -41,7 +41,7 @@ venv\Scripts\activate
 
 Pip install directly from the repository:
 ```bash
-pip install git+https://github.com/viktor-platform/development-tools.git
+pip install git+https://github.com/viktor-platform/development-tools.git@main
 ```
 
 # Using the Development Tools
@@ -112,3 +112,4 @@ Note: Make sure you have an instance of the app running in your development envi
 # Limitations
 - Storage() is currently not supported
 - Creating root entity is not possible
+- Non-EU currently not supported

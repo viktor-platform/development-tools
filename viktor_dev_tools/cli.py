@@ -10,8 +10,8 @@ from typing import List
 
 import click
 
-from viktor_dev_tools.subdomain import get_consolidated_login_details
-from viktor_dev_tools.subdomain import get_domain
+from viktor_dev_tools.tools.subdomain import get_consolidated_login_details
+from viktor_dev_tools.tools.subdomain import get_domain
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 CLIENT_PERMISSION = "Have you checked with the Client that you are allowed to retrieve data from their sub-domain"
@@ -98,9 +98,9 @@ def copy_entities(
 
     Example usage:
 
-    $ dev-tools-cli copy-entities -s <domain>  (prompts for password)
+    $ dev-tools-cli copy-entities -s viktor  (prompts for password)
 
-    $ dev-tools-cli copy-entities -s <domain> -st Afj..sf  (uses bearer token)
+    $ dev-tools-cli copy-entities -s viktor -st Afj..sf  (uses bearer token)
 
 
     Allows copying multiple entity trees from the source, by specifying multiple source-ids. e.g. :
@@ -149,7 +149,11 @@ def download_entities(
 
     Example usage:
 
-    $ dev-tools-cli download-entities -s <domain> -sw 1 -d ~/testfolder/downloaded_entities -etn 'CPT File' -rev
+    $ dev-tools-cli download-entities -s geo-tools -d ~/testfolder/downloaded_entities -u viktor_user@viktor.ai -etn 'CPT File' -rev
+
+    Allows copying multiple entities of multiple types from the source, by specifying multiple source-ids. e.g. :
+
+    $ copy-entities <other options> -etn Section -etn Project -etn 'CPT File'
 
     """
     source_domain = get_domain(source, username, source_pwd, source_token, source_ws)
