@@ -8,7 +8,7 @@ with open('README.md') as f:
 
 setuptools.setup(
     name='viktor_dev_tools',
-    version='1.1.0',
+    version='1.1.1',
     description='A Command Line Interface with tools to help VIKTOR Developers with their daily work',
     long_description=readme,
     long_description_content_type='text/markdown',
