@@ -76,7 +76,7 @@ Please be careful, all entities are OVERWRITTEN. Wrong use of this functionality
 
 Sample use for copying entities:
 ```bash
-dev-cli copy-entities -cp -u username@viktor.ai -s demo -si 2895 -di 3032 -sw 120 -dw 55
+dev-cli copy-entities -u username@viktor.ai -s demo -si 2895 -di 3032 -sw 120 -dw 55
 ```
 ![](resources/copy_entities_example.jpg)
 
@@ -99,12 +99,12 @@ Please be careful, all entities are OVERWRITTEN. Wrong use of this functionality
 
 Sample use for stashing the database:
 ```bash
-dev-cli stash-database -cp -u username@viktor.ai -s demo -d C:\WORK\PYTHON\download_map -f dev-environment.json -sw 55
+dev-cli stash-database -u username@viktor.ai -s demo -d C:\WORK\PYTHON\download_map -f dev-environment.json -sw 55
 ```
 
 Sample use for applying the stashed database:
 ```bash
-dev-cli stash-database -cp -u username@viktor.ai -s demo -d C:\WORK\PYTHON\download_map -f dev-environment.json -sw 55 --apply
+dev-cli stash-database -u username@viktor.ai -s demo -d C:\WORK\PYTHON\download_map -f dev-environment.json -sw 55 --apply
 ```
 Note: Make sure you have an instance of the app running in your development environment when you apply the database.
 
