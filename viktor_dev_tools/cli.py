@@ -14,7 +14,6 @@ from viktor_dev_tools.tools.subdomain import get_consolidated_login_details
 from viktor_dev_tools.tools.subdomain import get_domain
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
-CLIENT_PERMISSION = "Have you checked with the Client that you are allowed to retrieve data from their sub-domain"
 
 option_username = click.option("--username", "-u", help=f"Username for both subdomains, "
                                                         f"use this function when you want "
