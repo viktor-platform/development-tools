@@ -58,7 +58,7 @@ def get_file_content_from_s3(entity: EntityDict) -> Optional[bytes]:
     """If entity has a filename property, download the file_content from the temporary download url"""
     temp_download_url = entity["properties"].get("filename", None)
     if temp_download_url:
-        file_download = requests.get(temp_download_url)
+        file_download = requests.get(temp_download_url, timeout=60)
         return file_download.content
     return None
 
@@ -86,7 +86,6 @@ def get_consolidated_login_details(
     return source_pwd, source_token, destination_pwd, destination_token
 
 
-# TODO: integrate this logic into the classmethods instead of a separate loose function
 def get_domain(subdomain, username, pwd, token, workspace: str, refresh_token=None):
     """Create a subdomain either from SSO or username and password"""
     if token:
@@ -135,7 +134,9 @@ class ViktorSubDomain:
         self.client_id = client_id
         if not access_token:
             # Perform post request to '/o/token/' end-point to login
-            response = requests.post(f"{self.host}/o/token/", data=json.dumps(auth_details), headers=_STANDARD_HEADERS)
+            response = requests.post(
+                f"{self.host}/o/token/", data=json.dumps(auth_details), headers=_STANDARD_HEADERS, timeout=10
+            )
             if not 200 <= response.status_code < 300:
                 print(f"Provided credentials are not valid.\n{response.text}")
                 sys.exit(1)
@@ -167,7 +168,7 @@ class ViktorSubDomain:
             raise TypeError("Workspace should be of type int or str.")
         try:
             return int(workspace_id_or_name)
-        except ValueError:
+        except ValueError as exc:
             workspace_id_or_name = workspace_id_or_name.lower()
             workspaces_mapping = self.get_workspaces_mapping()
             if workspace_id_or_name.lower() not in workspaces_mapping.keys():
@@ -176,7 +177,7 @@ class ViktorSubDomain:
                     f"Requested workspace {workspace_id_or_name} was not found on subdomain. "
                     f"Available workspaces are: \n - {available_workspaces}"
                 )
-                raise click.ClickException(message)
+                raise click.ClickException(message) from exc
             return workspaces_mapping[workspace_id_or_name]
 
     def __del__(self):
@@ -184,7 +185,7 @@ class ViktorSubDomain:
         if self._logged_in and self.client_id == CLIENT_ID:  # Do not logout SSO, since token already expires in 15 min.
             payload = {"client_id": self.client_id, "token": self.access_token}
             response = requests.post(
-                f"{self.host}/o/revoke_token/", data=json.dumps(payload), headers=_STANDARD_HEADERS
+                f"{self.host}/o/revoke_token/", data=json.dumps(payload), headers=_STANDARD_HEADERS, timeout=10
             )
             if 200 <= response.status_code < 300:
                 print(f"Successfully logged out ({self.name}) ")
@@ -195,7 +196,9 @@ class ViktorSubDomain:
     def refresh_tokens(self) -> None:
         """Tokens for SSO expire within 900 seconds, so this function refreshes the tokens when it is expired"""
         payload = {"refresh_token": self.refresh_token, "client_id": self.client_id, "grant_type": "refresh_token"}
-        response = requests.post(f"{self.host}/o/token/", data=json.dumps(payload), headers=_STANDARD_HEADERS)
+        response = requests.post(
+            f"{self.host}/o/token/", data=json.dumps(payload), headers=_STANDARD_HEADERS, timeout=10
+        )
         response_json = response.json()
         self.access_token = response_json["access_token"]
         self.refresh_token = response_json["refresh_token"]
@@ -226,12 +229,15 @@ class ViktorSubDomain:
         if not path.startswith("/"):
             raise SyntaxError('URL should start with a "/"')
         response = requests.request(
-            "GET", f"{self.host}{'' if exclude_workspace else self.workspace}{path}", headers=self.headers
+            "GET", f"{self.host}{'' if exclude_workspace else self.workspace}{path}", headers=self.headers, timeout=10
         )
         if response.status_code == 401:
             self.refresh_tokens()
             response = requests.request(
-                "GET", f"{self.host}{'' if exclude_workspace else self.workspace}{path}", headers=self.headers
+                "GET",
+                f"{self.host}{'' if exclude_workspace else self.workspace}{path}",
+                headers=self.headers,
+                timeout=10,
             )
         response.raise_for_status()
         return response.json()
@@ -248,6 +254,7 @@ class ViktorSubDomain:
             f"{self.host}{'' if exclude_workspace else self.workspace}{path}",
             data=json.dumps(data),
             headers=self.headers,
+            timeout=10,
         )
         if response.status_code == 401:
             self.refresh_tokens()
@@ -256,6 +263,7 @@ class ViktorSubDomain:
                 f"{self.host}{'' if exclude_workspace else self.workspace}{path}",
                 data=json.dumps(data),
                 headers=self.headers,
+                timeout=10,
             )
         response.raise_for_status()
         if response.text:  # A DELETE request has no returned text, so check if there is text
@@ -267,7 +275,7 @@ class ViktorSubDomain:
         if not path.startswith("/"):
             raise SyntaxError('URL should start with a "/"')
         response = requests.request(
-            "PUT", f"{self.host}{self.workspace}{path}", data=json.dumps(data), headers=self.headers
+            "PUT", f"{self.host}{self.workspace}{path}", data=json.dumps(data), headers=self.headers, timeout=30
         )
         response.raise_for_status()
         return response.json()
@@ -276,17 +284,17 @@ class ViktorSubDomain:
         """Simple delete request"""
         if not path.startswith("/"):
             raise SyntaxError('URL should start with a "/"')
-        response = requests.request("DELETE", f"{self.host}{self.workspace}{path}", headers=self.headers)
+        response = requests.request("DELETE", f"{self.host}{self.workspace}{path}", headers=self.headers, timeout=30)
         response.raise_for_status()
 
     # ============================== All GET requests ============================== #
     def get_root_entities(self) -> List[EntityDict]:
         """Replacement of the entity().root_entities() method in the SDK"""
-        return self._get_request(f"/entities/")
+        return self._get_request("/entities/")
 
     def get_entity_types(self) -> List[dict]:
         """Replacement of the entity_types() method in the SDK"""
-        return self._get_request(f"/entity_types/")
+        return self._get_request("/entity_types/")
 
     def get_all_entities_of_entity_type(self, entity_type: int) -> List[EntityDict]:
         """Replacement of the entity_type(id).entities() method in the SDK"""
@@ -349,7 +357,7 @@ class ViktorSubDomain:
 
         Prompts the user for the top level entity to start with and then goes down the entity tree.
         """
-        parent_id = parent_id or int(input(f"Insert entity_id of desired entity: "))
+        parent_id = parent_id or int(input("Insert entity_id of desired entity: "))
         parent_entity = self.get_entity(parent_id)
         if exclude_children:
             print(f'Retrieving {parent_entity["name"]}')
@@ -393,7 +401,7 @@ class ViktorSubDomain:
         """Uploads a file to S3 using the host authentication and returns the filename url"""
         # Upload the file to S3
         result = self._post_request(f"/entity_types/{entity_type}/upload/", data={})
-        requests.post(result["url"], data=result["fields"], files={"file": file_content})
+        requests.post(result["url"], data=result["fields"], files={"file": file_content}, timeout=60)
 
         # Return the filename url which should be add the the file entity
         return result["fields"]["key"]
@@ -409,9 +417,11 @@ class ViktorSubDomain:
     ) -> EntityDict:
         """Replacement of the entity().post_child() method in the SDK
 
-        Has additional option to include file_content, which creates the file entity and also uploads file_content to S3
+        Has additional option to include file_content, which creates the file entity and also
+        uploads file_content to S3.
 
-        If an old_to_new_ids_mapping is given as dict, the dict is updated with a mapping of the children {old_id: new_id}
+        If an old_to_new_ids_mapping is given as dict, the dict is updated with a
+        mapping of the children {old_id: new_id}
         """
         if dry_run:
             return {"id": 0}
@@ -528,7 +538,8 @@ class ViktorSubDomain:
                     entity_type_dir.mkdir()
 
                 print(
-                    f'Getting all entities of type {entity_type["class_name"]} (can take a while if there are many entities)'
+                    f'Getting all entities of type {entity_type["class_name"]} '
+                    f"(can take a while if there are many entities)"
                 )
                 entities_of_specificed_type = self.get_all_entities_of_entity_type(entity_type["id"])
                 with click.progressbar(
@@ -537,18 +548,17 @@ class ViktorSubDomain:
                     for entity in progressbar:
                         if include_revisions:
                             for i, rev in enumerate(self.get_entity_revisions(entity["id"])):
-                                with (entity_type_dir / f'{entity["id"]}_rev{i}.json').open(mode="w+") as fw:
-                                    json.dump(rev, fw)
+                                with (entity_type_dir / f'{entity["id"]}_rev{i}.json').open(mode="w+") as entity_file:
+                                    json.dump(rev, entity_file)
                         else:
-                            with (entity_type_dir / f'{entity["id"]}.json').open(mode="w+") as fw:
-                                json.dump(entity, fw)
+                            with (entity_type_dir / f'{entity["id"]}.json').open(mode="w+") as entity_file:
+                                json.dump(entity, entity_file)
                 print("All entities succesfully saved")
 
     def download_database_to_local_folder(self, destination: str, filename: str):
         """Transfers all entities from current sub-domain to destination location as a single json file"""
         database_dict = {}  # Set up a dict which will be written to a file in the end
         all_entities = []  # Make a list in which all root entities including children will be saved
-        # Todo also get the file content
         for root_entity in self.get_root_entities():
             all_entities.append(self.get_entity_tree(root_entity["id"]))  # Append all root entities and children
 
@@ -559,14 +569,14 @@ class ViktorSubDomain:
         destination_dir = Path(f"{destination}")
         destination_dir.mkdir(parents=True, exist_ok=True)
         destination_path = destination_dir / filename
-        with open(destination_path, "w") as f:
-            json.dump(database_dict, f)
+        with open(destination_path, "w") as dest_file:
+            json.dump(database_dict, dest_file)
         print(f"Stashed database in {destination_path}")
 
     def upload_database_from_local_folder(self, source_folder: str, filename: str):
         """Transfers all entities from current sub-domain to destination location as a single json file"""
-        with open(Path(f"{source_folder}") / filename, "r") as f:
-            database_dict = json.load(f)  # Get the database file
+        with open(Path(f"{source_folder}") / filename, "r") as db_file:
+            database_dict = json.load(db_file)  # Get the database file
         entity_types = self.get_entity_types()
         destination_root_entities = self.get_root_entities()
         validate_root_entities_compatibility(database_dict["entities"], destination_root_entities)
@@ -639,7 +649,7 @@ class ViktorSubDomain:
 
         possible_parent_entity_ids = [entity["id"] for entity in possible_parent_entities]
         while destination not in possible_parent_entity_ids:
-            destination = int(click.prompt(f"Entity id not possible, please try again", default=default_id))
+            destination = int(click.prompt("Entity id not possible, please try again", default=default_id))
         return destination
 
     def _update_file_download(self, entity: EntityDict):
