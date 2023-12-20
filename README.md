@@ -101,12 +101,13 @@ Sample use for stashing the database:
 ```bash
 dev-cli stash-database -u username@viktor.ai -s demo -d C:\WORK\PYTHON\download_map -f dev-environment.json -sw 55
 ```
+**Please note:** Make sure you have an instance of the app running in your development environment when you stash the database.
 
 Sample use for applying the stashed database:
 ```bash
 dev-cli stash-database -u username@viktor.ai -s demo -d C:\WORK\PYTHON\download_map -f dev-environment.json -sw 55 --apply
 ```
-Note: Make sure you have an instance of the app running in your development environment when you apply the database.
+**Please note:** Make sure you have an instance of the app running in your development environment when you apply the database.
 
 
 # Limitations
