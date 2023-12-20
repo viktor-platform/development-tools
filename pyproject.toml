@@ -11,14 +11,13 @@ line-length = 120
 profile = 'black'
 line_length = 120
 force_single_line = true
-skip_glob = [".env"]
+skip_gitignore = true
 
 [tool.pylint.'MASTER']
 max-line-length=120
 
 [tool.pylint.'MESSAGES CONTROL']
 disable=[
-    "line-too-long",
     "too-few-public-methods",
     "too-many-arguments",
     "too-many-branches",
@@ -28,16 +27,4 @@ disable=[
     "too-many-locals",
     "too-many-nested-blocks",
     "too-many-public-methods",
-    "too-many-return-statements",
-    "too-many-statements",
-    "invalid-name",
-    "import-error",
-    "wrong-import-order",
-    "f-string-without-interpolation",
-    "fixme",
-    "raise-missing-from",
-    "consider-using-f-string",
-    "consider-using-dict-items",
-    "duplicate-code",
-    "unspecified-encoding",
 ]
