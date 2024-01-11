@@ -15,11 +15,14 @@ from viktor_dev_tools.tools.subdomain import get_domain
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
-option_username = click.option("--username", "-u", help=f"Username for both subdomains, "
-                                                        f"use this function when you want "
-                                                        f"to reuse the credentials for both source an destination "
-                                                        f"on the same domain")
-option_source = click.option("--source", "-s", help=f"Source subdomain", prompt="Source VIKTOR sub-domain")
+option_username = click.option(
+    "--username",
+    "-u",
+    help="Username for both subdomains, "
+    "use this option when you want to reuse the credentials "
+    "for both source an destination on the same domain",
+)
+option_source = click.option("--source", "-s", help="Source subdomain", prompt="Source VIKTOR sub-domain")
 option_source_pwd = click.option("--source-pwd", "-sp", help="Source domain password")
 option_source_token = click.option("--source-token", "-st", help="Source domain token ")
 option_source_workspace = click.option(
@@ -28,15 +31,14 @@ option_source_workspace = click.option(
 option_destination = click.option(
     "--destination",
     "-d",
-    help=f"Destination subdomain",
+    help="Destination subdomain",
 )
 option_destination_pwd = click.option("--destination-pwd", "-dp", help="Destination domain password")
 option_destination_token = click.option("--destination-token", "-dt", help="Destination domain token ")
 option_destination_workspace = click.option(
     "--destination-ws", "-dw", help="Destination workspace ID", prompt="Destination workspace ID"
 )
-option_destination_id = click.option(
-    "--destination-id", "-di", help="Destination parent entity id ")
+option_destination_id = click.option("--destination-id", "-di", help="Destination parent entity id ")
 option_source_id = click.option(
     "--source-ids", "-si", help="Source entity id (allows multiple)", prompt="Source entity ID", multiple=True
 )
@@ -97,9 +99,9 @@ def copy_entities(
 
     Example usage:
 
-    $ dev-tools-cli copy-entities -s viktor  (prompts for password)
+    $ copy-entities -s viktor  (prompts for password)
 
-    $ dev-tools-cli copy-entities -s viktor -st Afj..sf  (uses bearer token)
+    $ copy-entities -s viktor -st Afj..sf  (uses bearer token)
 
 
     Allows copying multiple entity trees from the source, by specifying multiple source-ids. e.g. :
@@ -130,7 +132,9 @@ def copy_entities(
 @option_source_token
 @option_source_workspace
 @click.option("--destination", "-d", help="Destination path", prompt="Destination path")
-@click.option("--entity-type-names", "-etn", help="Entity type name (allows multiple)", prompt="Entity type name", multiple=True)
+@click.option(
+    "--entity-type-names", "-etn", help="Entity type name (allows multiple)", prompt="Entity type name", multiple=True
+)
 @click.option("--include-revisions", "-rev", is_flag=True, help="Include all revisions of all entities Default: True")
 def download_entities(
     username: str,
@@ -148,7 +152,7 @@ def download_entities(
 
     Example usage:
 
-    $ dev-tools-cli download-entities -s geo-tools -d ~/testfolder/downloaded_entities -u viktor_user@viktor.ai -etn 'CPT File' -rev
+    $ download-entities -s geo-tools -d <path/on/computer> -u <username> -etn 'CPT File' -rev
 
     Allows copying multiple entities of multiple types from the source, by specifying multiple source-ids. e.g. :
 
@@ -198,8 +202,8 @@ def stash_database(
     Example usage:
 
     \b
-    $ dev-tools-cli stash-database -cp -u svandermeer@viktor.ai -s dev-svandermeer-viktor-ai -d databases -f dev-environment.json -sw 1
-    $ dev-tools-cli stash-database -cp -u svandermeer@viktor.ai -s dev-svandermeer-viktor-ai -d databases -f dev-environment.json -sw 1 --apply
+    $ stash-database -u <username> -s <subdomain> -d <path/on/computer> -f dev-environment.json -sw 1
+    $ stash-database -u <username> -s <subdomain> -d <path/on/computer> -f dev-environment.json -sw 1 --apply
     """
     # source domain when stashing, destination domain when applying
     domain = get_domain(source, username, source_pwd, source_token, source_ws)

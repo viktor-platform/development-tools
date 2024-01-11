@@ -8,8 +8,8 @@ from typing import Union
 def validate_root_entities_compatibility(source_root_entities, destination_root_entities):
     """Validate that the manifest file still generated the same root entities"""
     error_message = (
-        f"It appears the manifest has changed since your last stash. Please restore the root entities in "
-        f"the manifest file as they were stashed with."
+        "It appears the manifest has changed since your last stash. Please restore the root entities in "
+        "the manifest file as they were stashed with."
     )
     assert len(destination_root_entities) == len(source_root_entities), error_message
     for source_root_entity, destination_root_entity in zip(source_root_entities, destination_root_entities):
