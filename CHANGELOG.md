@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## v1.2.0 (DD/MM/YYYY)
+### Added
+- Method to add a user or users in bulk.
+
 ## v1.1.1 (03/12/2023)
 
 ### Changed

@@ -5,12 +5,14 @@ this package works both when executing as pip installed package, as well as runn
 """
 import subprocess
 from collections import OrderedDict
+import pandas as pd
 from typing import Iterable
 from typing import List
 
 import click
+import requests
 
-from viktor_dev_tools.tools.subdomain import get_consolidated_login_details
+from viktor_dev_tools.tools.subdomain import get_consolidated_login_details, UserDict
 from viktor_dev_tools.tools.subdomain import get_domain
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
@@ -211,6 +213,32 @@ def stash_database(
         domain.upload_database_from_local_folder(source_folder=destination, filename=filename)
     else:
         domain.download_database_to_local_folder(destination, filename)
+
+
+def add_users(source: str, username: str, source_pwd: str, csv_path: str):
+    source_domain = get_domain(source, username, source_pwd, token=None)
+
+    users_df = pd.read_csv(csv_path)
+    for key in ["first_name", "last_name", "email"]:
+        if key not in users_df.columns.values:
+            ValueError(f'CSV does not have a column with label "{key}"')
+    users_list = users_df.to_dict("records")
+    for user_dict in users_list:
+        user = UserDict(
+            first_name=user_dict["first_name"],
+            last_name=user_dict["last_name"],
+            name=f"{user_dict['first_name']} {user_dict['last_name']}",
+            email=user_dict["email"],
+            job_title=user_dict.get("job_title", ""),
+            is_dev=True,
+        )
+        try:
+            source_domain.add_user(user)
+        except requests.exceptions.HTTPError as e:
+            print(e)
+            print(f"Failed to add user: {user_dict['first_name']} {user_dict['last_name']}")
+            print()
+            print("Continue with next user...")
 
 
 @cli.command()
