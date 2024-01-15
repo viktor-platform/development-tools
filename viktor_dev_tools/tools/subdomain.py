@@ -35,7 +35,7 @@ class EntityDict(TypedDict, total=False):
     parent_entity_type: int
 
 
-class UserDict(TypedDict, total=False):
+class ViktorUserDict(TypedDict, total=False):
     """TypedDict that represent a user dictionary"""
 
     id: int
@@ -408,7 +408,7 @@ class ViktorSubDomain:
             )
         return mapping_dict
 
-    def get_all_users(self) -> List[UserDict]:
+    def get_all_users(self) -> List[ViktorUserDict]:
         """Retrieves all users in a subdomain"""
         return self._get_request("/users/")
 
@@ -602,8 +602,12 @@ class ViktorSubDomain:
         validate_root_entities_compatibility(database_dict["entities"], destination_root_entities)
 
         print("Successfully validated database compatibility. Removing children...")
+        click.confirm(
+            "[DANGER] This removes all current entities in this workspace. Do you want to continue?", abort=True
+        )
         for root_entity in destination_root_entities:
             self.delete_children(root_entity["id"])
+
         # Make an entity type mapping from source entity type -> destination entity type
         entity_type_mapping = get_entity_type_mapping_from_entity_types(
             source_entity_types=database_dict["entity_types"], destination_entity_types=entity_types
@@ -650,7 +654,7 @@ class ViktorSubDomain:
                 self.update_entity(entity_id, properties)
         print("Successfully applied stashed database!")
 
-    def add_user(self, user: UserDict):
+    def add_user(self, user: ViktorUserDict):
         user_data = {
             "email": user["email"],
             "first_name": user["first_name"],
