@@ -35,6 +35,22 @@ class EntityDict(TypedDict, total=False):
     parent_entity_type: int
 
 
+class ViktorUserDict(TypedDict, total=False):
+    """TypedDict that represent a user dictionary"""
+
+    id: int
+    name: str
+    first_name: str
+    last_name: str
+    username: str
+    email: str
+    job_title: str
+    email: str
+    is_dev: bool
+    is_env_admin: bool
+    is_external: bool
+
+
 def _repr_entities(entities: List[EntityDict]) -> str:
     """Returns a string representation of a list of entities.
 
@@ -392,6 +408,10 @@ class ViktorSubDomain:
             )
         return mapping_dict
 
+    def get_all_users(self) -> List[ViktorUserDict]:
+        """Retrieves all users in a subdomain"""
+        return self._get_request("/users/")
+
     # ============================== All POST requests ============================== #
     def get_parametrization(self, entity_id: int) -> Dict:
         """Get the parametrization of the current entity. In this parametrization the field types can be found"""
@@ -633,6 +653,23 @@ class ViktorSubDomain:
                     )
                 self.update_entity(entity_id, properties)
         print("Successfully applied stashed database!")
+
+    def add_user(self, user: ViktorUserDict):
+        user_data = {
+            "email": user["email"],
+            "first_name": user["first_name"],
+            "is_dev": bool(user.get("is_dev")),
+            "is_env_admin": bool(user.get("is_env_admin")),
+            "is_external": bool(user.get("is_external")),
+            "job_title": user.get("job_title"),
+            "last_name": user["last_name"],
+            "send_activation_email": True,
+        }
+        response = self._post_request("/users/", data=user_data, exclude_workspace=True)
+        if not response:
+            print(f"Failed to add user: {response['first_name']} {response['last_name']}")
+        else:
+            print(f"Successfully added user: {response['name']}")
 
     def _get_id_from_possible_entity_types(self, parent_entity_type: int) -> int:
         """Obtains all possible entity id's of the entity type under which the entities can be posted
