@@ -12,7 +12,8 @@ from typing import List
 import click
 import requests
 
-from viktor_dev_tools.tools.subdomain import get_consolidated_login_details, ViktorUserDict
+from viktor_dev_tools.tools.subdomain import get_consolidated_login_details, ViktorUserDict, ViktorSubDomain, \
+    ExtendedAPI
 from viktor_dev_tools.tools.subdomain import get_domain
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
@@ -30,6 +31,9 @@ option_source_token = click.option("--source-token", "-st", help="Source domain 
 option_source_workspace = click.option(
     "--source-ws", "-sw", help="Source workspace id or name", prompt="Source workspace ID"
 )
+option_source_id = click.option(
+    "--source-id", "-si", help="Source entity id (allows multiple)", prompt="Source entity ID", multiple=True
+)
 option_destination = click.option(
     "--destination",
     "-d",
@@ -41,9 +45,6 @@ option_destination_workspace = click.option(
     "--destination-ws", "-dw", help="Destination workspace ID", prompt="Destination workspace ID"
 )
 option_destination_id = click.option("--destination-id", "-di", help="Destination parent entity id ")
-option_source_id = click.option(
-    "--source-ids", "-si", help="Source entity id (allows multiple)", prompt="Source entity ID", multiple=True
-)
 
 
 class OrderedGroup(click.Group):
@@ -272,6 +273,53 @@ def upgrade() -> None:
     """Upgrade the cli dependencies."""
     pip_install_command = ["pip", "install", "-e", ".", "--upgrade"]
     subprocess.run(pip_install_command, check=True)
+
+
+@cli.command()
+@click.option("--environment", "-e", help="Environment domain, including `.viktor.ai`", prompt="Environment domain, e.g. cloud.viktor.ai")
+@click.option("--token", "-t", help="Personal Access Token for your environment", prompt="Personal Access Token for your environment")
+@option_source_workspace
+@option_source_id
+@option_destination_workspace
+@option_destination_id
+def copy_entities_new(
+    environment: str,
+    token: str,
+    source_ws: str,
+    source_id: list[int],
+    destination_ws: str,
+    destination_id: int,
+) -> None:
+    """Copy entities between workspaces.
+
+    \b
+    Example usage:
+
+
+    $ copy-entities-new -s cloud.viktor.ai -st Afj..sf -sw 1234 (uses Personal Access Token)
+
+
+    Allows copying multiple entity trees from the source, by specifying multiple source-ids. e.g. :
+
+    $ copy-entities <other options> -si 922 -si 1032 -si 124
+
+    """
+    if not destination_id:
+        raise OSError("Destination id should be specified")
+    if not destination_ws:
+        raise OSError("Destination ws should be specified")
+
+    source_ws = int(source_ws)
+    source_id = int(source_id[0])
+    destination_ws = int(destination_ws)
+    destination_id = int(destination_id)
+
+    api = ExtendedAPI(token=token, environment=environment)
+
+    entities, parent_relations = api.get_entity_tree(source_ws, source_id)
+    api.post_entity_tree(workspace_id=destination_ws, parent_id=destination_id,
+        entities=entities, parent_relations=parent_relations, dry_run=False
+    )
 
 
 if __name__ == "__main__":

@@ -12,11 +12,16 @@ from typing import Union
 import click
 import requests
 
+from viktor import api_v1 as vk
+
 from viktor_dev_tools.tools.config import CLIENT_ID
 from viktor_dev_tools.tools.config import CLIENT_ID_SSO
 from viktor_dev_tools.tools.helper_functions import add_field_names_referring_to_entities_to_container
 from viktor_dev_tools.tools.helper_functions import update_id_on_entity_fields
 from viktor_dev_tools.tools.helper_functions import validate_root_entities_compatibility
+
+
+
 
 # ============================== Authentication related classes and constants ============================== #
 
@@ -125,6 +130,55 @@ def get_entity_type_mapping_from_entity_types(
             if source_entity_type["class_name"] == destination_entity_type["class_name"]:
                 mapping_dict.update({source_entity_type["id"]: destination_entity_type["id"]})
     return mapping_dict
+
+
+class ExtendedAPI(vk.API):
+
+    def get_entity_tree(self, workspace_id: int, entity_id: int):
+        entities = {entity_id: self.get_entity(entity_id, workspace_id=workspace_id)}
+        parent_relations = {entity_id: None}
+
+        def get_entity_children_recursive(entity_):
+            children = entity_.children()
+            for child in children:
+                parent_relations[child.id] = entity_.id
+                entities[child.id] = child
+                get_entity_children_recursive(child)
+
+        get_entity_children_recursive(entities[entity_id])
+
+        return entities, parent_relations
+
+    def post_entity_tree(
+            self, workspace_id: int, parent_id: int, entities: dict[int, vk.Entity], parent_relations: dict[int, int],
+            dry_run: bool = True
+    ) -> None:
+        parent_entity = self.get_entity(parent_id, workspace_id=workspace_id)
+        other_parent = next(child_id for child_id, parent_id_ in parent_relations.items() if parent_id_ is None)
+
+        def post_children_recursive(entity_: vk.Entity, other_parent_id: int):
+            children = [
+                entities[child_id] for child_id, parent_id_ in parent_relations.items() if parent_id_ == other_parent_id
+            ]
+            for child in children:
+                if not dry_run:
+                    try:
+                        params = child.last_saved_params
+                    except AttributeError:
+                        params = {}
+                    new_child = entity_.create_child(
+                        entity_type_name=child.entity_type.name,
+                        name=child.name,
+                        params=params,
+                        workspace_id=workspace_id
+                    )
+                self._progressbar.update(1)
+                post_children_recursive(new_child, child.id)
+
+        progressbar_label = f'Posting entities to {workspace_id} {"(dry run)" if dry_run else ""}'
+        with click.progressbar(length=len(entities) - 1, label=progressbar_label) as progressbar:
+            self._progressbar = progressbar
+            post_children_recursive(parent_entity, other_parent)
 
 
 class ViktorSubDomain:
