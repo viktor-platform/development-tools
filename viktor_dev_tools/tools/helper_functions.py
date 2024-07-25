@@ -21,7 +21,7 @@ def add_field_names_referring_to_entities_to_container(
 ):
     """Get all the field names that refer to some entity.
 
-    :param parametrization_fields_list: Use ViktorSubDomain().get_parametrization(entity_id)["parametrization"] as input
+    :param parametrization_fields_list: Use ViktorEnvironment().get_parametrization(entity_id)["parametrization"] as input
     :param field_names_list_container: The result is added to the field_names_list_container. Looks like:
         [['page_name', 'tab_name', 'field_name'], ['page_name', 'tab_name', 'array_name', ['field_name']]]
     """

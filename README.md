@@ -70,7 +70,7 @@ Commands:
 The `-h` option should provide enough help for each of the available commands.
 
 ## Copy entities
-Copies entities from source workspace to destination workspace, for example from production to development environment. 
+Copies entities from source workspaces to destination workspaces, for example from production to development environment. 
 
 Please be careful, all entities are OVERWRITTEN. Wrong use of this functionality can do IRREVERSIBLE DAMAGE to your database, for example when you accidently overwrite your production database with your development database.
 
