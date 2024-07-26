@@ -300,9 +300,9 @@ def upgrade() -> None:
 @click.pass_obj
 def show_creds(obj) -> None:
     """Check the creds that are configured"""
-    env = os.environ.get("VIKTOR_ENV") or ""
-    pat = os.environ.get("VIKTOR_PAT") or ""
-    pat_masked = pat[:12] + "*" * 52 if pat else ""
+    env = os.environ.get("VIKTOR_ENV") or "Not configured!"
+    _pat = os.environ.get("VIKTOR_PAT")
+    pat_masked = _pat[:16] + "*" * 48 if _pat else "Not configured!"
     click.echo(f"VIKTOR_ENV = {env}")
     click.echo(f"VIKTOR_PAT = {pat_masked}")
 

@@ -61,10 +61,9 @@ Options:
   -h, --help  Show this message and exit.
 
 Commands:
-  copy-entities      Copy entities between domains.
-  download-entities  Download entities from domains.
-  stash-database     Stashes the database from some domain, and applies it...
-  upgrade            Upgrade the cli dependencies.
+  entities    Commands related to entity data.
+  users       Commands related to user data.
+  upgrade     Upgrade the cli dependencies.
 ```
 
 The `-h` option should provide enough help for each of the available commands.
@@ -76,13 +75,12 @@ Please be careful, all entities are OVERWRITTEN. Wrong use of this functionality
 
 Sample use for copying entities:
 ```bash
-dev-cli copy-entities -u username@viktor.ai -s demo -si 2895 -di 3032 -sw 120 -dw 55
+dev-cli entities copy -s prod-ws 2895 Development 3032
 ```
 ![](resources/copy_entities_example.jpg)
 
 Note:
-Make sure that the root entities are similar. This can be achieved by running the app you are trying to copy in 
-your development environment.
+Make sure that the root entities are similar. This can be achieved by running the app you are trying to copy in your development environment.
 
 ## Download entities
 Download entities to a local file folder.
@@ -112,5 +110,6 @@ dev-cli stash-database -u username@viktor.ai -s demo -d C:\WORK\PYTHON\download_
 
 # Limitations
 - Storage() is currently not supported
+- Files in FileFields are not copied over
 - Creating root entity is not possible
 - Non-EU currently not supported
