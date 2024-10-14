@@ -182,11 +182,11 @@ def add(obj, filepath: str):
 
     Example usage:
 
-    $ add-users -u <username> -s <subdomain> -f <path/on/computer>
+    $ users add -u <username> -s <subdomain> -f <path/on/computer>
 
     """
     require_credentials(obj)
-    source_domain = ViktorEnvironment(environment=ctx.env, personal_access_token=ctx.pat, workspace="1")
+    source_domain = ViktorEnvironment(environment=obj.env, personal_access_token=obj.pat, workspace="1")
 
     users_df = pd.read_csv(filepath)
     for key in ["first_name", "last_name", "email"]:

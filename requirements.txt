@@ -1,4 +1,4 @@
-viktor==14.13.0
+viktor==14.16.0
 click==8.1.7
 requests==2.32.3
 pandas==2.2.2

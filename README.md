@@ -12,9 +12,12 @@ SOFTWARE.
 # Viktor Development Tools
 This repository is a collection of tools to make life easier for VIKTOR-developers. Some important features include:
 
-- Copy entities: Copy entities from your production environment to your development environment for debugging
-- Stash database and stash database apply: Allows for working on multiple apps simultaneously, without having to set all 
-parametrizaiton manually.
+- entities: 
+  - copy: Copy entities from your production environment to your development environment for debugging
+  - download: Download entities from a workspace.
+  - stash: Stashes the complete entity structure of a workspaces.
+- users:
+  - add: Add users in bulk to the domain.
 
 # Installation
 We have created a pip-installable package that will download the necessary dependencies for you. This will also create a

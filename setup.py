@@ -8,12 +8,12 @@ with open("README.md") as f:
 
 setuptools.setup(
     name="viktor_dev_tools",
-    version="1.1.1",
+    version="2.0.0",
     description="A Command Line Interface with tools to help VIKTOR Developers with their daily work",
     long_description=readme,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
     include_package_data=True,
-    install_requires=[requirement for requirement in requirements if requirement and "viktor" not in requirement],
+    install_requires=requirements,
     entry_points={"console_scripts": ["dev-cli = viktor_dev_tools.cli:cli"]},
 )
