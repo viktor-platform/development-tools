@@ -12,9 +12,12 @@ SOFTWARE.
 # Viktor Development Tools
 This repository is a collection of tools to make life easier for VIKTOR-developers. Some important features include:
 
-- Copy entities: Copy entities from your production environment to your development environment for debugging
-- Stash database and stash database apply: Allows for working on multiple apps simultaneously, without having to set all 
-parametrizaiton manually.
+- entities: 
+  - copy: Copy entities from your production environment to your development environment for debugging
+  - download: Download entities from a workspace.
+  - stash: Stashes the complete entity structure of a workspaces.
+- users:
+  - add: Add users in bulk to the domain.
 
 # Installation
 We have created a pip-installable package that will download the necessary dependencies for you. This will also create a
@@ -61,28 +64,26 @@ Options:
   -h, --help  Show this message and exit.
 
 Commands:
-  copy-entities      Copy entities between domains.
-  download-entities  Download entities from domains.
-  stash-database     Stashes the database from some domain, and applies it...
-  upgrade            Upgrade the cli dependencies.
+  entities    Commands related to entity data.
+  users       Commands related to user data.
+  upgrade     Upgrade the cli dependencies.
 ```
 
 The `-h` option should provide enough help for each of the available commands.
 
 ## Copy entities
-Copies entities from source workspace to destination workspace, for example from production to development environment. 
+Copies entities from source workspaces to destination workspaces, for example from production to development environment. 
 
 Please be careful, all entities are OVERWRITTEN. Wrong use of this functionality can do IRREVERSIBLE DAMAGE to your database, for example when you accidently overwrite your production database with your development database.
 
 Sample use for copying entities:
 ```bash
-dev-cli copy-entities -u username@viktor.ai -s demo -si 2895 -di 3032 -sw 120 -dw 55
+dev-cli entities copy -s prod-ws 2895 Development 3032
 ```
 ![](resources/copy_entities_example.jpg)
 
 Note:
-Make sure that the root entities are similar. This can be achieved by running the app you are trying to copy in 
-your development environment.
+Make sure that the root entities are similar. This can be achieved by running the app you are trying to copy in your development environment.
 
 ## Download entities
 Download entities to a local file folder.
@@ -112,5 +113,6 @@ dev-cli stash-database -u username@viktor.ai -s demo -d C:\WORK\PYTHON\download_
 
 # Limitations
 - Storage() is currently not supported
+- Files in FileFields are not copied over
 - Creating root entity is not possible
 - Non-EU currently not supported

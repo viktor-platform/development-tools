@@ -1,8 +1,9 @@
 """This module contains a class representation and all related functions for a Viktor Sub-domain"""
 import json
+import pickle
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Iterable
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -12,11 +13,107 @@ from typing import Union
 import click
 import requests
 
+from viktor import api_v1 as vkt
+
 from viktor_dev_tools.tools.config import CLIENT_ID
-from viktor_dev_tools.tools.config import CLIENT_ID_SSO
 from viktor_dev_tools.tools.helper_functions import add_field_names_referring_to_entities_to_container
 from viktor_dev_tools.tools.helper_functions import update_id_on_entity_fields
 from viktor_dev_tools.tools.helper_functions import validate_root_entities_compatibility
+
+
+# ============================== Using the viktor SDK api module ============================== #
+def get_workspace_id(api: vkt.API, workspace_id_or_name: Union[str, int]) -> int:
+    """Retrieves the workspaces id based on given id or name"""
+    if not isinstance(workspace_id_or_name, (str, int)):
+        raise TypeError("Workspace should be of type int or str.")
+    try:
+        return int(workspace_id_or_name)
+    except ValueError as exc:
+        available_workspaces = {ws.name.lower(): ws for ws in api.get_workspaces()}
+        try:
+            return available_workspaces[workspace_id_or_name.lower()].id
+        except KeyError:
+            workspace_names = "\n - ".join(available_workspaces.keys())
+            message = (
+                f"Requested workspaces {workspace_id_or_name} was not found. "
+                f"Available workspaces are: \n - {workspace_names}"
+            )
+            raise KeyError(message) from exc
+
+
+def get_entity_tree(
+    api: vkt.API, workspace_id: int, entity_id: int, recursive: bool = True
+) -> tuple[dict[int, vkt.Entity], dict[int, int | None]]:
+    source_workspace = api.get_workspace(workspace_id)
+    entities = {entity_id: source_workspace.get_entity(entity_id)}
+    entity_relations = {entity_id: None}  # Maps child to parent. (every child has only 1 parent or None)
+
+    def get_entity_children_recursive(entity_):
+        children = entity_.children()
+        for child in children:
+            entities[child.id] = child
+            entity_relations[child.id] = entity_.id
+            get_entity_children_recursive(child)
+
+    name_and_id = f"{source_workspace.name}(id={workspace_id})"
+    progressbar_label = f'Getting entities from: {name_and_id: <40}'
+    with click.progressbar(length=1, label=progressbar_label) as progressbar:
+        if recursive:
+            get_entity_children_recursive(entities[entity_id])
+        progressbar.update(1)
+
+    return entities, entity_relations
+
+
+def post_entity_tree(
+        api: vkt.API,
+        destination_workspace_id: int,
+        destination_parent_id: int,
+        source_entities: dict[int, vkt.Entity],
+        source_relations: dict[int, int],
+) -> None:
+    source_parent_id_ = next(child_id for child_id, parent_id_ in source_relations.items() if parent_id_ is None)
+    destination_workspace = api.get_workspace(destination_workspace_id)
+    destination_parent_entity_ = destination_workspace.get_entity(destination_parent_id)
+
+    def post_children_recursive(destination_parent_entity: vkt.Entity, source_parent_id: int, pb: "Progressbar"):
+        source_children = [
+            source_entities[child_id] for child_id, p_id in source_relations.items() if p_id == source_parent_id
+        ]
+        for source_child in source_children:
+            entity_type_name = source_child.entity_type.name
+            try:
+                params = source_child.last_saved_params
+            except AttributeError:
+                params = {}
+            try:
+                file = api.get_entity_file(source_child.id, workspace_id=source_child._workspace_id)
+                storage_data = api.generate_upload_url(
+                    entity_type_name=entity_type_name, workspace_id=destination_workspace_id
+                )
+                requests.post(
+                    storage_data["url"], data=storage_data["fields"], files={"file": file.getvalue_binary()}, timeout=10
+                )
+                filename = storage_data["fields"]["key"]
+            except ValueError as e:
+                filename = None
+
+            new_child = destination_parent_entity.create_child(
+                entity_type_name=entity_type_name,
+                name=source_child.name, params=params,
+                filename=filename,
+                workspace_id=destination_workspace_id
+            )
+            pb.update(1)
+            post_children_recursive(destination_parent_entity=new_child, source_parent_id=source_child.id, pb=pb)
+
+    name_and_id = f"{destination_workspace.name}(id={destination_workspace_id})"
+    progressbar_label = f'Posting entities to:   {name_and_id: <40}'
+    with click.progressbar(length=len(source_entities) - 1, label=progressbar_label) as progressbar:
+        post_children_recursive(
+            destination_parent_entity=destination_parent_entity_, source_parent_id=source_parent_id_, pb=progressbar
+        )
+
 
 # ============================== Authentication related classes and constants ============================== #
 
@@ -102,23 +199,16 @@ def get_consolidated_login_details(
     return source_pwd, source_token, destination_pwd, destination_token
 
 
-def get_domain(subdomain, username, pwd, token, workspace: str, refresh_token=None):
+def get_domain(environment, personal_access_token, workspace: str):
     """Create a subdomain either from SSO or username and password"""
-    if token:
-        return ViktorSubDomain.from_token(
-            sub_domain=subdomain, access_token=token, refresh_token=refresh_token, workspace=workspace
-        )
-    username = username or click.prompt(f"Username for {subdomain}")
-    password = pwd or click.prompt(f"Password for {subdomain}", hide_input=True)
-    return ViktorSubDomain.from_login(sub_domain=subdomain, username=username, password=password, workspace=workspace)
-
+    return ViktorEnvironment(environment=environment, personal_access_token=personal_access_token, workspace=workspace)
 
 def get_entity_type_mapping_from_entity_types(
     source_entity_types: List[Dict], destination_entity_types: List[Dict]
 ) -> Dict[int, int]:
     """Maps the id's of the entity types from source to destination, based on entity type name.
 
-    The format used as input for this method is the output from ViktorSubDomain().get_entity_types()"""
+    The format used as input for this method is the output from ViktorEnvironment().get_entity_types()"""
     mapping_dict: Dict[int, int] = {}
     for destination_entity_type in destination_entity_types:
         for source_entity_type in source_entity_types:
@@ -127,44 +217,22 @@ def get_entity_type_mapping_from_entity_types(
     return mapping_dict
 
 
-class ViktorSubDomain:
-    """Class representation of a VIKTOR sub-domain.
-    Handles the logging in and out when instantiating and destroying a ViktorSubDomain class.
-    """
-
-    _logged_in = False
+class ViktorEnvironment:
+    """Class representation of a VIKTOR environment."""
 
     # ============================== All authentication related requests ============================== #
     def __init__(
         self,
-        sub_domain: str,
-        auth_details: dict,
-        client_id: str,
+        environment: str,
+        personal_access_token: str,
         workspace: str,
-        access_token: str = None,
-        refresh_token: str = None,
     ):
-        print(f"Logging in to {sub_domain}")
-        self.name = sub_domain
-        self.host = f"https://{sub_domain}.viktor.ai/api"
-        self.client_id = client_id
-        if not access_token:
-            # Perform post request to '/o/token/' end-point to login
-            response = requests.post(
-                f"{self.host}/o/token/", data=json.dumps(auth_details), headers=_STANDARD_HEADERS, timeout=10
-            )
-            if not 200 <= response.status_code < 300:
-                print(f"Provided credentials are not valid.\n{response.text}")
-                sys.exit(1)
-            self.access_token = response.json()["access_token"]
-            self.refresh_token = response.json()["refresh_token"]
-        else:
-            self.access_token = access_token
-            self.refresh_token = refresh_token
-
+        self.name = environment.split(".")[0]
+        self.host = f"https://{environment}/api"
+        self.personal_access_token = personal_access_token
         self.workspace_id = self.get_workspace_id(workspace)
         self.workspace = f"/workspaces/{self.workspace_id}"
-        print(f"Selecting workspace {self.workspace_id}")
+        print(f"Selecting workspaces {self.workspace_id}")
         # Set empty parameters in init
         self._progressbar = None
         self._logged_in = True
@@ -173,13 +241,13 @@ class ViktorSubDomain:
     def headers(self) -> dict:
         """Retrieves headers based on current access token"""
         return {
-            "Authorization": f"Bearer {self.access_token}",
+            "Authorization": f"Bearer {self.personal_access_token}",
             "Content-Type": "application/json",
             "Cache-Control": "no-cache",
         }
 
     def get_workspace_id(self, workspace_id_or_name: Union[str, int]) -> int:
-        """Retrieves the workspace id based on given id or name"""
+        """Retrieves the workspaces id based on given id or name"""
         if not isinstance(workspace_id_or_name, (str, int)):
             raise TypeError("Workspace should be of type int or str.")
         try:
@@ -190,42 +258,13 @@ class ViktorSubDomain:
             if workspace_id_or_name.lower() not in workspaces_mapping.keys():
                 available_workspaces = "\n - ".join(workspaces_mapping.keys())
                 message = (
-                    f"Requested workspace {workspace_id_or_name} was not found on subdomain. "
+                    f"Requested workspaces {workspace_id_or_name} was not found on subdomain. "
                     f"Available workspaces are: \n - {available_workspaces}"
                 )
                 raise click.ClickException(message) from exc
-            return workspaces_mapping[workspace_id_or_name]
-
-    def __del__(self):
-        """Log out of the subdomain by revoking the access access_token"""
-        if self._logged_in and self.client_id == CLIENT_ID:  # Do not logout SSO, since token already expires in 15 min.
-            payload = {"client_id": self.client_id, "token": self.access_token}
-            response = requests.post(
-                f"{self.host}/o/revoke_token/", data=json.dumps(payload), headers=_STANDARD_HEADERS, timeout=10
-            )
-            if 200 <= response.status_code < 300:
-                print(f"Successfully logged out ({self.name}) ")
-            else:
-                print(f"Unable to log out!  ({self.name})")
-                sys.exit(1)
-
-    def refresh_tokens(self) -> None:
-        """Tokens for SSO expire within 900 seconds, so this function refreshes the tokens when it is expired"""
-        payload = {"refresh_token": self.refresh_token, "client_id": self.client_id, "grant_type": "refresh_token"}
-        response = requests.post(
-            f"{self.host}/o/token/", data=json.dumps(payload), headers=_STANDARD_HEADERS, timeout=10
-        )
-        response_json = response.json()
-        self.access_token = response_json["access_token"]
-        self.refresh_token = response_json["refresh_token"]
 
     @classmethod
-    def from_token(cls, sub_domain: str, access_token: str, refresh_token: str = None, workspace: str = "1"):
-        """Class method to login with Bearer Token, useful for SSO environments"""
-        return cls(sub_domain, {}, CLIENT_ID_SSO, access_token, refresh_token, workspace)
-
-    @classmethod
-    def from_login(cls, sub_domain: str, username: str, password: str, workspace: str) -> "ViktorSubDomain":
+    def from_login(cls, sub_domain: str, username: str, password: str, workspaces: str) -> "ViktorEnvironment":
         """Class method to login with sub-domain, username and password"""
         if not username or not password:
             print("Provide both username and password.")
@@ -235,7 +274,7 @@ class ViktorSubDomain:
         return cls(sub_domain, auth_details, CLIENT_ID, workspace=workspace)
 
     def get_workspaces_mapping(self) -> Dict[str, int]:
-        """Maps the workspace name (not case sensitive) to the workspace ID"""
+        """Maps the workspaces name (not case sensitive) to the workspaces ID"""
         workspaces_list = self._get_request(path="/workspaces/", exclude_workspace=True)
         return {item["name"].lower(): int(item["id"]) for item in sorted(workspaces_list, key=lambda p: p["id"])}
 
@@ -261,7 +300,7 @@ class ViktorSubDomain:
     def _post_request(self, path: str, data: dict, exclude_workspace: bool = False) -> Union[dict, list, None]:
         """Simple post request using the subdomain authentication.
 
-        Use exclude_workspace flag if the post request should be send to an URL that does not include a workspace.
+        Use exclude_workspace flag if the post request should be send to an URL that does not include a workspaces.
         """
         if not path.startswith("/"):
             raise SyntaxError('URL should start with a "/"')
@@ -395,7 +434,7 @@ class ViktorSubDomain:
             print("Successfully obtained all entities!\n")
         return entity_tree
 
-    def get_entity_type_mapping(self, destination: "ViktorSubDomain") -> Dict[int, int]:
+    def get_entity_type_mapping(self, destination: "ViktorEnvironment") -> Dict[int, int]:
         """Maps the id's of the entity types from source to destination, based on entity type name"""
         source_entity_types = self.get_entity_types()
         mapping_dict = get_entity_type_mapping_from_entity_types(source_entity_types, destination.get_entity_types())
@@ -541,7 +580,7 @@ class ViktorSubDomain:
         return response
 
     def download_entities_of_type_to_local_folder(
-        self, destination: str, entity_type_names: Tuple[str] = None, include_revisions: bool = True
+        self, destination: str, entity_type_names: Iterable[str] = None, include_revisions: bool = True
     ) -> None:
         """Transfers entities of a specified type from current sub-domain to destination location
 
@@ -603,7 +642,7 @@ class ViktorSubDomain:
 
         print("Successfully validated database compatibility. Removing children...")
         click.confirm(
-            "[DANGER] This removes all current entities in this workspace. Do you want to continue?", abort=True
+            "[DANGER] This removes all current entities in this workspaces. Do you want to continue?", abort=True
         )
         for root_entity in destination_root_entities:
             self.delete_children(root_entity["id"])
