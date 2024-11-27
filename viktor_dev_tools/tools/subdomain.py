@@ -459,7 +459,8 @@ class ViktorSubDomain:
 
         data = {"entity_type": entity_type, "name": entity_dict["name"], "properties": entity_dict["properties"]}
         response = self._post_request(f"/entities/{parent_id}/entities/", data)
-        self._progressbar.update(1)
+        if self._progressbar:
+            self._progressbar.update(1)
         if old_to_new_ids_mapping is not None:
             old_to_new_ids_mapping[entity_dict["id"]] = response["id"]
 
