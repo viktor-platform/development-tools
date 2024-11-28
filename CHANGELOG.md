@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## fixed
+- from_token method requires kwargs in return cls
+
 ## v1.2.0 (DD/MM/YYYY)
 ### Added
 - Method to add a user or users in bulk.
