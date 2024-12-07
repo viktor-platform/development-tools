@@ -222,7 +222,14 @@ class ViktorSubDomain:
     @classmethod
     def from_token(cls, sub_domain: str, access_token: str, refresh_token: str = None, workspace: str = "1"):
         """Class method to login with Bearer Token, useful for SSO environments"""
-        return cls(sub_domain, {}, CLIENT_ID_SSO, access_token, refresh_token, workspace)
+        return cls(
+            sub_domain=sub_domain,
+            auth_details={},
+            client_id=CLIENT_ID_SSO,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            workspace=workspace,
+        )
 
     @classmethod
     def from_login(cls, sub_domain: str, username: str, password: str, workspace: str) -> "ViktorSubDomain":
